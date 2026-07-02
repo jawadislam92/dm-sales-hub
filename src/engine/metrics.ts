@@ -5,6 +5,8 @@
 // so the engine is a pure, host-agnostic unit. The HUB parity test is the proof
 // this port did not drift: June 2026 closer cash must equal $455,674.90.
 
+import { addDays, daysBetween, parseD, isoD } from './dateEngine'
+
 // Frozen status sets — exact case, exact spacing. Membership is tested on the
 // UNTRIMMED status string, so "Closed " (trailing space) must NOT match.
 export const QSET = new Set<string>([
@@ -89,4 +91,59 @@ export function aggregate(
   const keys = ['bookings', 'shown', 'qual', 'closed', 'cash', 'fees'] as const
   names.forEach(n => { for (const k of keys) tot[k] += map[n][k] })
   return { map, names, tot }
+}
+
+export interface Series { keys: string[]; cash: number[]; book: number[]; daily: boolean }
+
+// VERBATIM PORT of series (L260-267). Returns raw bucket KEYS ('YYYY-MM-DD' when
+// daily, 'YYYY-MM' when monthly); label formatting (fmtDay/fmtMo) stays in the
+// frontend. daily = span <= 92 days, exactly as the prototype.
+export function series(
+  BK: Rec[], kind: 'closer' | 'setter', name: string | null,
+  from: string, to: string, basis: 'call' | 'book',
+): Series {
+  const span = daysBetween(from, to) + 1, daily = span <= 92
+  const order: string[] = [], idx: Record<string, number> = {}
+  if (daily) {
+    for (let s = from; s <= to; s = addDays(s, 1)) { idx[s] = order.length; order.push(s) }
+  } else {
+    let s = from.slice(0, 7)
+    const e = to.slice(0, 7)
+    let guard = 0
+    while (s <= e && guard++ < 200) {
+      idx[s] = order.length; order.push(s)
+      const d = parseD(s + '-01'); d.setUTCMonth(d.getUTCMonth() + 1); s = isoD(d).slice(0, 7)
+    }
+  }
+  const cash = new Array(order.length).fill(0), book = new Array(order.length).fill(0)
+  for (const b of BK) {
+    const dk = basis === 'book' ? b.bd : b.cs
+    if (!dk || dk < from || dk > to) continue
+    const nm = kind === 'setter' ? b.s : b.o
+    if (name && nm !== name) continue
+    if (!nm) continue
+    const key = daily ? dk : dk.slice(0, 7)
+    const i = idx[key]
+    if (i == null) continue
+    cash[i] += b.cash; book[i]++
+  }
+  return { keys: order, cash, book, daily }
+}
+
+// VERBATIM PORT of statusMix (L268-271). Returns the person's top-6 lead-status
+// counts, descending; the PALETTE colour assignment stays in the frontend.
+export function statusMix(
+  BK: Rec[], kind: 'closer' | 'setter', name: string,
+  from: string, to: string, basis: 'call' | 'book',
+): Array<[string, number]> {
+  const cnt: Record<string, number> = {}
+  for (const b of BK) {
+    const dk = basis === 'book' ? b.bd : b.cs
+    if (!dk || dk < from || dk > to) continue
+    const nm = kind === 'setter' ? b.s : b.o
+    if (nm !== name) continue
+    const s = b.st || '(blank)'
+    cnt[s] = (cnt[s] || 0) + 1
+  }
+  return Object.entries(cnt).sort((a, b) => b[1] - a[1]).slice(0, 6)
 }

@@ -2,8 +2,8 @@
 // UTC-anchored string math on 'YYYY-MM-DD' — never a locale/tz-shifted Date.
 // Ported unchanged so hosted numbers equal the prototype and the HUB.
 
-const parseD = (s: string): Date => new Date(s + 'T00:00:00Z')
-const isoD = (d: Date): string => d.toISOString().slice(0, 10)
+export const parseD = (s: string): Date => new Date(s + 'T00:00:00Z')
+export const isoD = (d: Date): string => d.toISOString().slice(0, 10)
 
 export const addDays = (s: string, n: number): string => {
   const d = parseD(s)
