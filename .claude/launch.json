@@ -1,0 +1,15 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dashboard",
+      "runtimeExecutable": "C:\\laragon\\bin\\nodejs\\node-v22\\node.exe",
+      "runtimeArgs": [
+        "C:\\laragon\\www\\dm-sales-hub\\node_modules\\tsx\\dist\\cli.mjs",
+        "C:\\laragon\\www\\dm-sales-hub\\src\\server.ts",
+        "8791"
+      ],
+      "port": 8791
+    }
+  ]
+}

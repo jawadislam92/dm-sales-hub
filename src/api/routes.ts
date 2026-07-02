@@ -29,13 +29,17 @@ export function registerApi(app: FastifyInstance, source: DataSource): void {
 
   app.get('/api/overview', async () => source.overviewExtra())
 
+  // Raw flattened Bookings records — the frontend runs the (identical) engine
+  // over these so the hosted dashboards render exactly like the prototype.
+  app.get('/api/bk', async () => source.getBK())
+
   app.get('/api/tabs', async () => source.listTabs())
 
   app.get('/api/tabs/:name', async (req, reply) => {
     const { name } = req.params as { name: string }
     const q = req.query as Record<string, string>
     const offset = Math.max(0, parseInt(q.offset ?? '0', 10) || 0)
-    const limit = Math.min(500, Math.max(1, parseInt(q.limit ?? '100', 10) || 100))
+    const limit = Math.min(100000, Math.max(1, parseInt(q.limit ?? '100', 10) || 100))
     const page = source.tabPage(name, offset, limit)
     if (!page) return reply.code(404).send({ error: 'unknown tab: ' + name })
     return page
