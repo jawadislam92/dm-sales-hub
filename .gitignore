@@ -1,6 +1,7 @@
 node_modules/
 dist/
 build/
+.pgdata/
 .env
 .env.*
 !.env.example
