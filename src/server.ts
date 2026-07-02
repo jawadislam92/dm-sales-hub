@@ -6,8 +6,11 @@ import { env } from './config/env'
 import { createSnapshotSource } from './data/snapshotSource'
 import { createPgSource } from './data/pgSource'
 import { getDb } from './db/pglite'
+import cookie from '@fastify/cookie'
 import { registerApi } from './api/routes'
 import { registerIngest } from './ingest/route'
+import { registerAuth } from './auth/routes'
+import { bootstrapAdmins } from './auth/allowlist'
 import type { DataSource } from './data/source'
 
 const app = Fastify({ logger: true })
@@ -17,6 +20,13 @@ const app = Fastify({ logger: true })
 // The DB is always open (for /ingest, users, admin), independent of which backend
 // the read side uses.
 const db = await getDb(process.env.PGDATA_DIR ?? './.pgdata')
+
+// Login (email allow-list + magic link). Off unless AUTH_ENABLED=1, so local review
+// needs no login; when enabled the guard (registered here, before the routes) gates
+// everything except health, the webhook and /auth/*.
+await app.register(cookie)
+if (process.env.ALLOWLIST_BOOTSTRAP) await bootstrapAdmins(db, process.env.ALLOWLIST_BOOTSTRAP.split(','))
+registerAuth(app, db)
 
 const backend = process.env.DATA_BACKEND ?? 'snapshot'
 let source: DataSource
