@@ -10,6 +10,7 @@ import cookie from '@fastify/cookie'
 import { registerApi } from './api/routes'
 import { registerIngest } from './ingest/route'
 import { registerAuth } from './auth/routes'
+import { registerAdmin } from './admin/routes'
 import { bootstrapAdmins } from './auth/allowlist'
 import type { DataSource } from './data/source'
 
@@ -40,6 +41,7 @@ if (backend === 'pg') {
 
 registerApi(app, source)
 registerIngest(app, db)
+registerAdmin(app, db)
 // Serve the ported prototype UI (src/web/index.html) at the root.
 app.register(fastifyStatic, { root: join(dirname(fileURLToPath(import.meta.url)), 'web'), prefix: '/' })
 
