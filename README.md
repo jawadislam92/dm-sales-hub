@@ -5,7 +5,9 @@ Evolves the read-only prototype in `../dashboard-build` into a live **Node/TS + 
 reconciles to the team's HUB numbers **to the dollar**, and that lets the client progressively move
 off their Google Sheet and cut their Zapier/Jotform spend — without losing quality.
 
-**Status:** Planning package complete (this commit). Phase‑1 app scaffold is next. _Client approval pending — this is prep so it's ready when they say go._
+**Status:** Phase‑1 **built, tested & running** — engine (HUB‑exact), read API, hosted dashboard, snapshot→DB backfill, `/ingest`, magic‑link auth, admin, Docker. 24 tests green. _Run it: double‑click `start-dashboard.bat`, then open http://localhost:8791._ Client approval still pending; the live/auto‑updating part needs the client's Zapier + Close access.
+
+**Run locally:** `npm install` once, then `npm run dev` (or `start-dashboard.bat`) → http://localhost:8791. Tests: `npm test`. Load the database: `node node_modules/tsx/dist/cli.mjs src/backfill/run.ts` then set `DATA_BACKEND=pg`.
 
 ## Docs
 | File | What it is |
