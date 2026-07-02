@@ -7,16 +7,21 @@ import { createSnapshotSource } from './data/snapshotSource'
 import { createPgSource } from './data/pgSource'
 import { getDb } from './db/pglite'
 import { registerApi } from './api/routes'
+import { registerIngest } from './ingest/route'
 import type { DataSource } from './data/source'
 
 const app = Fastify({ logger: true })
 
 // DATA_BACKEND=pg reads from the database (run the backfill first). Default is the
 // snapshot, which works with zero setup — that's what the launcher uses.
+// The DB is always open (for /ingest, users, admin), independent of which backend
+// the read side uses.
+const db = await getDb(process.env.PGDATA_DIR ?? './.pgdata')
+
 const backend = process.env.DATA_BACKEND ?? 'snapshot'
 let source: DataSource
 if (backend === 'pg') {
-  source = await createPgSource(await getDb(process.env.PGDATA_DIR ?? './.pgdata'))
+  source = await createPgSource(db)
   app.log.info('data backend: postgres (pglite)')
 } else {
   source = createSnapshotSource(env.DATA_DIR)
@@ -24,6 +29,7 @@ if (backend === 'pg') {
 }
 
 registerApi(app, source)
+registerIngest(app, db)
 // Serve the ported prototype UI (src/web/index.html) at the root.
 app.register(fastifyStatic, { root: join(dirname(fileURLToPath(import.meta.url)), 'web'), prefix: '/' })
 
