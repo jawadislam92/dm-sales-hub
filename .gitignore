@@ -1,0 +1,17 @@
+node_modules/
+dist/
+build/
+.env
+.env.*
+!.env.example
+*.log
+npm-debug.log*
+.DS_Store
+coverage/
+.vscode/
+.idea/
+*.local
+data/*.local.json
+
+# Parity fixture carries real rep-level numbers — regenerate with tools/gen-parity-fixture.mjs
+tests/fixtures/*.json
