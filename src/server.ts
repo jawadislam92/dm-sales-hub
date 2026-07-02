@@ -20,16 +20,16 @@ const app = Fastify({ logger: true })
 // snapshot, which works with zero setup — that's what the launcher uses.
 // The DB is always open (for /ingest, users, admin), independent of which backend
 // the read side uses.
-const db = await getDb(process.env.PGDATA_DIR ?? './.pgdata')
+const db = await getDb(env.PGDATA_DIR)
 
 // Login (email allow-list + magic link). Off unless AUTH_ENABLED=1, so local review
 // needs no login; when enabled the guard (registered here, before the routes) gates
 // everything except health, the webhook and /auth/*.
 await app.register(cookie)
-if (process.env.ALLOWLIST_BOOTSTRAP) await bootstrapAdmins(db, process.env.ALLOWLIST_BOOTSTRAP.split(','))
+if (env.ALLOWLIST_BOOTSTRAP) await bootstrapAdmins(db, env.ALLOWLIST_BOOTSTRAP.split(','))
 registerAuth(app, db)
 
-const backend = process.env.DATA_BACKEND ?? 'snapshot'
+const backend = env.DATA_BACKEND
 let source: DataSource
 if (backend === 'pg') {
   source = await createPgSource(db)

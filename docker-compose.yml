@@ -1,0 +1,30 @@
+# Single-container deploy: the Node app with its embedded database (PGlite)
+# persisted to a named volume. Handles Daily Mentor's data volume comfortably;
+# migrating to a managed Postgres later is a swap of the db layer, not a rewrite.
+#
+# First run must load data:  docker compose run --rm app \
+#   node node_modules/tsx/dist/cli.mjs src/backfill/run.ts
+# (needs the sheet snapshot / Sheets API access — see .env.example).
+#
+# Put a TLS reverse proxy (Caddy/Nginx/Cloudflare) in front for HTTPS in prod.
+
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      HOST: 0.0.0.0
+      DATA_BACKEND: pg
+      PGDATA_DIR: /app/.pgdata
+      SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET in .env}
+      AUTH_ENABLED: ${AUTH_ENABLED:-1}
+      ALLOWLIST_BOOTSTRAP: ${ALLOWLIST_BOOTSTRAP:-}
+      WEBHOOK_SHARED_SECRET: ${WEBHOOK_SHARED_SECRET:-}
+      SMTP_URL: ${SMTP_URL:-}
+    volumes:
+      - dmdata:/app/.pgdata
+
+volumes:
+  dmdata:

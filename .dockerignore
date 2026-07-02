@@ -1,0 +1,9 @@
+node_modules
+.pgdata
+.git
+tests
+dist
+build
+*.log
+.env
+.env.*
