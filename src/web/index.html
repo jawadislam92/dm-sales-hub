@@ -116,6 +116,23 @@
   .loading{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);z-index:99;gap:14px}
   .spin{width:30px;height:30px;border:3px solid #dfe3ec;border-top-color:var(--indigo);border-radius:50%;animation:s .8s linear infinite}
   @keyframes s{to{transform:rotate(360deg)}}
+  /* ---- visual polish (additive) ---- */
+  body{background:#f4f6fb}
+  .side{background:linear-gradient(180deg,#0f1424 0%,#151b30 100%)}
+  .top{box-shadow:0 1px 0 rgba(16,24,40,.04)}
+  .card2,.kcard,.kc{border-radius:16px;transition:box-shadow .16s ease,transform .16s ease,border-color .16s ease}
+  .card2{box-shadow:0 1px 2px rgba(16,24,40,.04),0 1px 3px rgba(16,24,40,.03)}
+  .kcard{box-shadow:0 1px 2px rgba(16,24,40,.04)}
+  .card2:hover,.kcard:hover{box-shadow:0 8px 22px rgba(16,24,40,.09);transform:translateY(-2px);border-color:#e3e8f2}
+  .kcard:before{border-radius:0 4px 4px 0;width:4px}
+  .kcard .n{font-size:26px;letter-spacing:-.025em}
+  .kcard .l{letter-spacing:.05em}
+  .datebar{box-shadow:0 2px 8px rgba(16,24,40,.05)}
+  .dpreset,.pchip,.nav{transition:.14s ease}
+  .pchip:hover{transform:translateY(-1px)}
+  .dpreset.active{box-shadow:0 2px 8px rgba(79,70,229,.28)}
+  .lbbar>i{transition:width .5s cubic-bezier(.4,0,.2,1)}
+  .kcard .n,.kc .n{font-variant-numeric:tabular-nums}
 </style>
 </head>
 <body>
