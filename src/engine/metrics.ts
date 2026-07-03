@@ -78,7 +78,7 @@ export function aggregate(
     let m = map[name]
     if (!m) m = map[name] = { name, bookings: 0, shown: 0, qual: 0, closed: 0, cash: 0, fees: 0 }
     m.bookings++
-    if (b.cash > 0) m.closed++
+    if (b.st === 'Closed') m.closed++ // a "close" = Lead Status "Closed" (HUB defn), not cash
     m.cash += b.cash
     m.fees += b.fees
     if (SHOWN.has(b.st)) m.shown++

@@ -133,6 +133,14 @@
   .dpreset.active{box-shadow:0 2px 8px rgba(79,70,229,.28)}
   .lbbar>i{transition:width .5s cubic-bezier(.4,0,.2,1)}
   .kcard .n,.kc .n{font-variant-numeric:tabular-nums}
+  .filterbar{background:#fff;border-bottom:1px solid var(--line);padding:8px 20px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .filterbar .fbl{font-size:10.5px;color:#98a2b3;font-weight:700;letter-spacing:.06em}
+  .filterbar select,.filterbar input{font-size:12px;padding:5px 7px;border:1px solid var(--line);border-radius:7px;background:#fbfcfe;outline:none}
+  .filterbar input{width:130px}
+  .filterbar .fadd{display:inline-flex;gap:6px;align-items:center;margin-left:auto}
+  .filterbar .fadd button,.filterbar .fclear{font-size:12px;padding:5px 11px;border:1px solid var(--line);border-radius:7px;background:#f4f6fb;color:var(--indigo);cursor:pointer;font-weight:600}
+  .fchip{font-size:12px;background:#eef2ff;color:#3730a3;border:1px solid #e0e7ff;padding:3px 6px 3px 9px;border-radius:999px;display:inline-flex;gap:7px;align-items:center}
+  .fchip b{cursor:pointer;color:#6366f1;font-size:14px;line-height:1}
 </style>
 </head>
 <body>
@@ -149,6 +157,7 @@
       <div class="search" id="searchwrap" style="display:none"><span class="si">⌕</span><input id="q" placeholder="Search this tab…" autocomplete="off"></div>
       <span class="pill" id="rowpill" style="display:none"></span>
     </div>
+    <div class="filterbar" id="filterbar" style="display:none"></div>
     <div class="viewport" id="viewport" style="display:none"><div class="content" id="content"><div class="ghead" id="ghead"></div><div class="rows" id="rowsEl"></div></div></div>
     <div class="dash" id="dashview"></div>
   </main>
@@ -171,7 +180,7 @@ const PALETTE=['#4f46e5','#0ea5e9','#10b981','#f59e0b','#8b5cf6','#f43f5e','#14b
 const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const QSET=new Set(['Qualified Showed Call','Closed','Call Completed - Deposit','Call Completed - 1 Week Trial','Closed Within 30 Days']);
 const SHOWN=new Set(['Qualified Showed Call','Closed','Call Completed - Deposit','Call Completed - 1 Week Trial','Closed Within 30 Days','Call Completed - Disqualified']);
-let DATA,DASH,TABMAP={},TABS_META=[],BK=[],DMIN="2025-01-01",DMAX=TODAY,state={tab:null,sort:-1,dir:1,q:"",view:[]};
+let DATA,DASH,TABMAP={},TABS_META=[],BK=[],DMIN="2025-01-01",DMAX=TODAY,state={tab:null,sort:-1,dir:1,q:"",view:[],filters:[]};
 let DR={from:"2026-06-01",to:"2026-06-30",basis:"call",key:"month"},SEL={closer:null,setter:null},CUR={};
 
 async function boot(){
@@ -218,11 +227,16 @@ function buildNav(){
     grp.items.forEach(it=>{const has=DASHVIEWS[it.name]||meta[it.name]!=null;if(!has)return;const cnt=meta[it.name]!=null?`<span class="cnt">${fmtNum(meta[it.name])}</span>`:'';const d=document.createElement('div');d.className='nav';d.dataset.name=it.name;d.innerHTML=`<span class="ic">${it.ic}</span><span>${it.label||it.name}</span>${cnt}`;d.onclick=()=>show(it.name);el.appendChild(d);});});
 }
 const setActive=name=>document.querySelectorAll('.nav').forEach(n=>n.classList.toggle('active',n.dataset.name===name));
+const OPLBL={contains:'contains',eq:'=',ne:'≠',gt:'>',lt:'<',empty:'is empty',notempty:'not empty'};
+function buildFilters(t){const fb=document.getElementById('filterbar');const cols=t.cols.map((c,i)=>`<option value="${i}">${esc(c||'Col '+(i+1))}</option>`).join('');const ops=Object.entries(OPLBL).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');const chips=state.filters.map((f,fi)=>`<span class="fchip">${esc(t.cols[f.col]||'col')} ${OPLBL[f.op]}${f.op==='empty'||f.op==='notempty'?'':' “'+esc(f.val)+'”'}<b onclick="removeFilter(${fi})">×</b></span>`).join('');fb.innerHTML=`<span class="fbl">FILTERS</span>${chips}<span class="fadd"><select id="fcol">${cols}</select><select id="fop">${ops}</select><input id="fval" placeholder="value" onkeydown="if(event.key==='Enter')addFilter()"><button onclick="addFilter()">Add filter</button>${state.filters.length?'<button class=fclear onclick="clearFilters()">Clear all</button>':''}</span>`;}
+function addFilter(){const t=TABMAP[state.tab];state.filters.push({col:+document.getElementById('fcol').value,op:document.getElementById('fop').value,val:document.getElementById('fval').value});buildFilters(t);document.getElementById('viewport').scrollTop=0;applyFilterSort();renderRows();}
+function removeFilter(i){state.filters.splice(i,1);const t=TABMAP[state.tab];buildFilters(t);applyFilterSort();renderRows();}
+function clearFilters(){state.filters=[];const t=TABMAP[state.tab];buildFilters(t);applyFilterSort();renderRows();}
 
 async function show(name){
-  state.tab=name;state.sort=-1;state.dir=1;state.q='';setActive(name);
+  state.tab=name;state.sort=-1;state.dir=1;state.q='';state.filters=[];setActive(name);
   const dv=document.getElementById('dashview'),vp=document.getElementById('viewport'),sw=document.getElementById('searchwrap'),rp=document.getElementById('rowpill');
-  if(DASHVIEWS[name]){vp.style.display='none';sw.style.display='none';rp.style.display='none';dv.style.display='block';
+  if(DASHVIEWS[name]){vp.style.display='none';sw.style.display='none';rp.style.display='none';document.getElementById('filterbar').style.display='none';dv.style.display='block';
     document.getElementById('ttl').textContent=name==='__overview__'?'Overview':name==='__closers__'?'Closer Performance':'Setter Performance';
     document.getElementById('tmeta').textContent=name==='__overview__'?'whole-business snapshot':'per-rep scorecards & trends';
     renderDash();return;}
@@ -234,14 +248,14 @@ async function show(name){
     catch(e){document.getElementById('tmeta').textContent='failed to load';return;}
     if(state.tab!==name)return;
   }
-  const t=TABMAP[name];document.getElementById('ttl').textContent=name;document.getElementById('tmeta').textContent=t.cols.length+' columns';document.getElementById('q').value='';
+  const t=TABMAP[name];document.getElementById('ttl').textContent=name;document.getElementById('tmeta').textContent=t.cols.length+' columns';document.getElementById('q').value='';document.getElementById('filterbar').style.display='flex';buildFilters(t);
   computeWidths(t);applyFilterSort();renderHead(t);document.getElementById('viewport').scrollTop=0;renderRows();
 }
 
 /* ===== explorer grid ===== */
 let WIDTHS=[],TOTALW=0;
 function computeWidths(t){WIDTHS=t.cols.map((c,i)=>{const ty=t.types[i],h=(''+c).length;if(ty==='date')return 116;if(ty==='pct')return 86;if(ty==='money')return 116;if(ty==='num')return 100;return Math.min(Math.max(h*8+28,130),300);});TOTALW=WIDTHS.reduce((a,b)=>a+b,0);}
-function applyFilterSort(){const t=TABMAP[state.tab];let idx=t.data.map((_,i)=>i);if(state.q){const q=state.q.toLowerCase();idx=idx.filter(i=>{const r=t.data[i];for(let c=0;c<r.length;c++)if((''+r[c]).toLowerCase().includes(q))return true;return false;});}if(state.sort>=0){const sc=state.sort,ty=t.types[sc],dir=state.dir;idx.sort((a,b)=>{let x=t.data[a][sc],y=t.data[b][sc];const xe=(x===''||x==null),ye=(y===''||y==null);if(xe&&ye)return 0;if(xe)return 1;if(ye)return -1;if(ty==='num'||ty==='money'||ty==='pct'){x=+x;y=+y;}else{x=(''+x).toLowerCase();y=(''+y).toLowerCase();}return x<y?-dir:x>y?dir:0;});}state.view=idx;document.getElementById('content').style.height=(HEADH+idx.length*ROWH)+'px';document.getElementById('rowsEl').style.height=(idx.length*ROWH)+'px';document.getElementById('rowpill').innerHTML=`<b>${fmtNum(idx.length)}</b> of ${fmtNum(t.n)} rows`;}
+function applyFilterSort(){const t=TABMAP[state.tab];let idx=t.data.map((_,i)=>i);if(state.q){const q=state.q.toLowerCase();idx=idx.filter(i=>{const r=t.data[i];for(let c=0;c<r.length;c++)if((''+r[c]).toLowerCase().includes(q))return true;return false;});}if(state.filters.length){idx=idx.filter(i=>{const r=t.data[i];return state.filters.every(f=>{const raw=r[f.col];const v=(''+(raw==null?'':raw)).toLowerCase();const val=(''+f.val).toLowerCase();switch(f.op){case 'contains':return v.includes(val);case 'eq':return v===val;case 'ne':return v!==val;case 'gt':return parseFloat(raw)>parseFloat(f.val);case 'lt':return parseFloat(raw)<parseFloat(f.val);case 'empty':return v==='';case 'notempty':return v!=='';default:return true;}});});}if(state.sort>=0){const sc=state.sort,ty=t.types[sc],dir=state.dir;idx.sort((a,b)=>{let x=t.data[a][sc],y=t.data[b][sc];const xe=(x===''||x==null),ye=(y===''||y==null);if(xe&&ye)return 0;if(xe)return 1;if(ye)return -1;if(ty==='num'||ty==='money'||ty==='pct'){x=+x;y=+y;}else{x=(''+x).toLowerCase();y=(''+y).toLowerCase();}return x<y?-dir:x>y?dir:0;});}state.view=idx;document.getElementById('content').style.height=(HEADH+idx.length*ROWH)+'px';document.getElementById('rowsEl').style.height=(idx.length*ROWH)+'px';document.getElementById('rowpill').innerHTML=`<b>${fmtNum(idx.length)}</b> of ${fmtNum(t.n)} rows`;}
 function renderHead(t){const h=document.getElementById('ghead');h.style.width=TOTALW+'px';h.innerHTML=t.cols.map((c,i)=>{const ar=state.sort===i?`<span class="ar">${state.dir>0?'▲':'▼'}</span>`:'';const al=(t.types[i]==='num'||t.types[i]==='money'||t.types[i]==='pct')?'justify-content:flex-end;':'';return `<div class="hc" style="width:${WIDTHS[i]}px;${al}" data-c="${i}" title="${esc(c)}">${esc(c||'—')}${ar}</div>`;}).join('');h.querySelectorAll('.hc').forEach(hc=>hc.onclick=()=>{const c=+hc.dataset.c;if(state.sort===c)state.dir*=-1;else{state.sort=c;state.dir=1;}applyFilterSort();renderHead(t);renderRows();});}
 const chipClass=v=>{for(const[re,cl]of STATUS_COLORS)if(re.test(v))return cl;return 'c-gray';};
 const isStatusCol=name=>/status|new \/ returning|dmpn\?|mql\?|processor|package/i.test(name);
@@ -272,7 +286,7 @@ function leaderboard(rows,fmt,kind){const max=Math.max(1,...rows.map(r=>r.cash))
 /* ===== date engine ===== */
 function aggregate(kind,from,to,basis){
   const map={};
-  for(const b of BK){const dk=basis==='book'?b.bd:b.cs;if(!dk||dk<from||dk>to)continue;const name=kind==='setter'?b.s:b.o;if(!name)continue;let m=map[name];if(!m)m=map[name]={name,bookings:0,shown:0,qual:0,closed:0,cash:0,fees:0};m.bookings++;if(b.cash>0)m.closed++;m.cash+=b.cash;m.fees+=b.fees;if(SHOWN.has(b.st))m.shown++;if(QSET.has(b.st))m.qual++;}
+  for(const b of BK){const dk=basis==='book'?b.bd:b.cs;if(!dk||dk<from||dk>to)continue;const name=kind==='setter'?b.s:b.o;if(!name)continue;let m=map[name];if(!m)m=map[name]={name,bookings:0,shown:0,qual:0,closed:0,cash:0,fees:0};m.bookings++;if(b.st==='Closed')m.closed++;m.cash+=b.cash;m.fees+=b.fees;if(SHOWN.has(b.st))m.shown++;if(QSET.has(b.st))m.qual++;}
   const names=Object.keys(map).sort((a,b)=>map[b].cash-map[a].cash||map[b].bookings-map[a].bookings);
   const tot={name:'Team',bookings:0,shown:0,qual:0,closed:0,cash:0,fees:0};names.forEach(n=>{for(const k of['bookings','shown','qual','closed','cash','fees'])tot[k]+=map[n][k];});
   return {map,names,tot};

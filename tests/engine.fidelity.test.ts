@@ -27,11 +27,11 @@ describe('date engine', () => {
 })
 
 describe('aggregate fidelity guards', () => {
-  it('closed = cash > 0 strictly — zero and negative are not closes', () => {
+  it("closed = Lead Status 'Closed' — status decides, not cash", () => {
     const A = aggregate(buildBK(tab([
-      rec('2026-06-10', 'A', 'Closed', 0),
-      rec('2026-06-10', 'A', 'Closed', -500),
-      rec('2026-06-10', 'A', 'Closed', 1),
+      rec('2026-06-10', 'A', 'Closed', 0),                      // status Closed, $0 -> still a close
+      rec('2026-06-10', 'A', 'Call Completed - Deposit', 5000), // cash but not 'Closed' -> not a close
+      rec('2026-06-10', 'A', 'No-Show', 0),
     ])), 'closer', '2026-06-01', '2026-06-30', 'call')
     expect(A.map['A'].closed).toBe(1)
   })
