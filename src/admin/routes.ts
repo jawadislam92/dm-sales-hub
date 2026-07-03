@@ -82,7 +82,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}td,th{text-align:left;p
 input,select{padding:7px 9px;border:1px solid #e8ebf2;border-radius:8px;font-size:13px;margin-right:6px}
 button{padding:7px 12px;border:0;border-radius:8px;background:#4f46e5;color:#fff;font-size:13px;cursor:pointer}
 .x{background:#fdecea;color:#b42318;padding:2px 8px;border-radius:6px;cursor:pointer;font-size:12px;border:0}a{color:#4f46e5}</style>
-<h1>Admin · <a href="/">← back to dashboard</a></h1>
+<h1>Admin · <a href="/">← dashboard</a> · <a href="/admin/integrations">Integrations →</a></h1>
 <div class="card"><h2>Team access (who can log in)</h2>
 <div><input id="ue" type="email" placeholder="email"><select id="ur"><option value="viewer">viewer</option><option value="admin">admin</option></select><button onclick="addUser()">Add / update</button></div>
 <table id="users"></table></div>

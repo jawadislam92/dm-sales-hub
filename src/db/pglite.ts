@@ -1,5 +1,5 @@
 import { PGlite } from '@electric-sql/pglite'
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 
@@ -10,7 +10,8 @@ import { dirname, join } from 'node:path'
 const migrationsDir = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'migrations')
 
 export async function runMigrations(db: PGlite): Promise<void> {
-  await db.exec(readFileSync(join(migrationsDir, '0001_core.sql'), 'utf-8'))
+  const files = readdirSync(migrationsDir).filter((f) => f.endsWith('.sql')).sort()
+  for (const f of files) await db.exec(readFileSync(join(migrationsDir, f), 'utf-8'))
 }
 
 let singleton: PGlite | null = null

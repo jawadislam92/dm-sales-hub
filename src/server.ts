@@ -11,6 +11,8 @@ import { registerApi } from './api/routes'
 import { registerIngest } from './ingest/route'
 import { registerAuth } from './auth/routes'
 import { registerAdmin } from './admin/routes'
+import { registerIntegrations } from './integrations/routes'
+import { startScheduler } from './integrations/scheduler'
 import { bootstrapAdmins } from './auth/allowlist'
 import type { DataSource } from './data/source'
 
@@ -42,7 +44,11 @@ if (backend === 'pg') {
 registerApi(app, source)
 registerIngest(app, db)
 registerAdmin(app, db)
+registerIntegrations(app, db)
 // Serve the ported prototype UI (src/web/index.html) at the root.
 app.register(fastifyStatic, { root: join(dirname(fileURLToPath(import.meta.url)), 'web'), prefix: '/' })
+
+// Pull scheduled API integrations on their interval.
+startScheduler(db, 30, (m) => app.log.info(m))
 
 await app.listen({ port: env.PORT, host: env.HOST })
