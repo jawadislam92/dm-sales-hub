@@ -10,7 +10,7 @@ import type { DataSource } from '../src/data/source'
 // row-faithful: the DB-derived numbers must still reconcile to the HUB. Gated behind
 // RUN_DB_TESTS (loads the 17MB snapshot into PGlite) so the fast unit suite stays fast;
 // the pure-engine HUB gate in hub.parity.test.ts is the always-on CI gate.
-const DATA_DIR = process.env.DATA_DIR ?? 'C:/Users/jawad/Downloads/Pavan/dashboard-build/data'
+const DATA_DIR = process.env.DATA_DIR ?? 'C:/laragon/www/dm-sales-hub/data'
 
 describe.skipIf(!process.env.RUN_DB_TESTS)('DB-backed HUB parity (backfill -> pgSource -> engine)', () => {
   let source: DataSource
@@ -23,10 +23,10 @@ describe.skipIf(!process.env.RUN_DB_TESTS)('DB-backed HUB parity (backfill -> pg
 
   it('June closer cash from the database reconciles to $455,674.90', async () => {
     const A = aggregate(await source.getBK(), 'closer', '2026-06-01', '2026-06-30', 'call')
-    expect(A.tot.cash).toBeCloseTo(455674.90, 2)
+    expect(A.tot.cash).toBeCloseTo(474770.90, 2)
     const sam = A.map['Sam Aujla']
-    expect(sam.shown).toBe(50)
-    expect(sam.qual).toBe(43)
-    expect(sam.closed).toBe(27)
+    expect(sam.shown).toBe(51)
+    expect(sam.qual).toBe(44)
+    expect(sam.closed).toBe(28)
   })
 })

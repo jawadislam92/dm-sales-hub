@@ -12,7 +12,7 @@ coverage/
 .vscode/
 .idea/
 *.local
-data/*.local.json
+data/*.json
 
 # Parity fixture carries real rep-level numbers — regenerate with tools/gen-parity-fixture.mjs
 tests/fixtures/*.json

@@ -6,7 +6,7 @@ import { z } from 'zod'
 // their own modules so they can be toggled without a reboot / for tests.
 const Env = z.object({
   HOST: z.string().default('127.0.0.1'),
-  DATA_DIR: z.string().default('C:/Users/jawad/Downloads/Pavan/dashboard-build/data'),
+  DATA_DIR: z.string().default('./data'),
   DATA_BACKEND: z.enum(['snapshot', 'pg']).default('snapshot'),
   PGDATA_DIR: z.string().default('./.pgdata'),
   ALLOWLIST_BOOTSTRAP: z.string().optional(),

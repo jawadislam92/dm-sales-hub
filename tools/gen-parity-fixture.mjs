@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const src = process.argv[2] || process.env.SNAPSHOT ||
-  'C:/Users/jawad/Downloads/Pavan/dashboard-build/data/site_data.json'
+  resolve(here, '../data/site_data.json')
 const out = resolve(here, '../tests/fixtures/bookings.parity.json')
 
 const NAMES = [

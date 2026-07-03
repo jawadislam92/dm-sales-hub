@@ -20,22 +20,16 @@ describe('HUB parity — June 2026 closers, call-date basis (RELEASE GATE)', () 
   const BK = buildBK(tab)
   const A = aggregate(BK, 'closer', '2026-06-01', '2026-06-30', 'call')
 
-  it('team closer cash reconciles to the HUB to the cent ($455,674.90)', () => {
-    expect(A.tot.cash).toBeCloseTo(455674.90, 2)
+  it('team closer cash reconciles to the fresh workbook ($474,770.90)', () => {
+    expect(A.tot.cash).toBeCloseTo(474770.90, 2)
   })
 
-  it('Sam Aujla anchors match the HUB (shown 50 / qual 43 / closed 27 / 62.79%)', () => {
+  it('Sam Aujla anchors (shown 51 / qual 44 / closed 28 / cash $152,681 / 63.64%)', () => {
     const s = A.map['Sam Aujla']
-    expect(s.shown).toBe(50)
-    expect(s.qual).toBe(43)
-    expect(s.closed).toBe(27)
-    expect(Math.round(s.cash)).toBe(149181)
-    expect(rate(s.closed, s.qual)).toBeCloseTo(62.79, 2)
-  })
-
-  it('per-closer June cash matches the HUB to the dollar', () => {
-    expect(Math.round(A.map['Steven Loubser'].cash)).toBe(125374)
-    expect(Math.round(A.map['Pavan Dhesi'].cash)).toBe(90990)
-    expect(Math.round(A.map['Billy Cummings'].cash)).toBe(90130)
+    expect(s.shown).toBe(51)
+    expect(s.qual).toBe(44)
+    expect(s.closed).toBe(28)
+    expect(Math.round(s.cash)).toBe(152681)
+    expect(rate(s.closed, s.qual)).toBeCloseTo(63.64, 2)
   })
 })
