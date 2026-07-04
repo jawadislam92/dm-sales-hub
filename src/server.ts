@@ -12,6 +12,7 @@ import { registerIngest } from './ingest/route'
 import { registerAuth } from './auth/routes'
 import { registerAdmin } from './admin/routes'
 import { registerIntegrations } from './integrations/routes'
+import { registerReconcile } from './reconcile/closeRecon'
 import { startScheduler } from './integrations/scheduler'
 import { bootstrapAdmins } from './auth/allowlist'
 import type { DataSource } from './data/source'
@@ -45,6 +46,7 @@ registerApi(app, source)
 registerIngest(app, db)
 registerAdmin(app, db)
 registerIntegrations(app, db)
+registerReconcile(app, db, source)
 // Serve the ported prototype UI (src/web/index.html) at the root.
 app.register(fastifyStatic, { root: join(dirname(fileURLToPath(import.meta.url)), 'web'), prefix: '/' })
 
