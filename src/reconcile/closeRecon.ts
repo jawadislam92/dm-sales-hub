@@ -66,4 +66,32 @@ export function registerReconcile(app: FastifyInstance, db: PGlite, source: Data
       byCloser,
     }
   })
+
+  // Reconcile the replicated close_bookings vs the sheet, month by month, within
+  // whatever date range Close actually covers.
+  app.get('/admin/api/reconcile/bookings', async (req, reply) => {
+    if (!requireAdmin(req, reply)) return
+    const cb = (await db.query<{ scheduled_date: string; status: string }>(
+      'SELECT scheduled_date, status FROM close_bookings')).rows
+    const byMonth: Record<string, number> = {}
+    const byStatus: Record<string, number> = {}
+    let min = '9999', max = '0000'
+    for (const r of cb) {
+      const m = (r.scheduled_date || '').slice(0, 7)
+      if (m) byMonth[m] = (byMonth[m] || 0) + 1
+      const st = r.status || '(blank)'
+      byStatus[st] = (byStatus[st] || 0) + 1
+      if (r.scheduled_date && r.scheduled_date < min) min = r.scheduled_date
+      if (r.scheduled_date && r.scheduled_date > max) max = r.scheduled_date
+    }
+    const BK = await source.getBK()
+    const sheetByMonth: Record<string, number> = {}
+    for (const b of BK) {
+      if (b.cs >= min && b.cs <= max) {
+        const m = b.cs.slice(0, 7)
+        sheetByMonth[m] = (sheetByMonth[m] || 0) + 1
+      }
+    }
+    return { closeBookings: { total: cb.length, range: [min, max], byMonth, byStatus }, sheetInRange: { byMonth: sheetByMonth } }
+  })
 }
