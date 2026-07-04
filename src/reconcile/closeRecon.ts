@@ -3,6 +3,10 @@ import type { PGlite } from '@electric-sql/pglite'
 import type { DataSource } from '../data/source'
 import { requireAdmin } from '../auth/routes'
 
+// Normalize names so accent/case/whitespace variants merge (Noël≡Noel, Tj≡TJ).
+const canon = (name: string): string =>
+  (name || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim()
+
 // Reconciliation: does the LIVE Close data agree with the sheet? Compares Close
 // won opportunities (by closer) against the sheet's closes (Lead Status "Closed",
 // by Lead Owner). If the two line up, the API-direct pipe is trustworthy.
@@ -38,11 +42,16 @@ export function registerReconcile(app: FastifyInstance, db: PGlite, source: Data
       }
     }
 
-    // side-by-side per closer (union of both name sets)
-    const names = [...new Set([...Object.keys(wonByCloser), ...Object.keys(closesByCloser)])]
-    const byCloser = names
-      .map((n) => ({ closer: n, closeWon: wonByCloser[n] || 0, sheetClosed: closesByCloser[n] || 0 }))
-      .sort((a, b) => b.closeWon - a.closeWon)
+    // merge accent/case/whitespace name variants across both systems
+    const merged: Record<string, { closer: string; closeWon: number; sheetClosed: number }> = {}
+    const add = (name: string, field: 'closeWon' | 'sheetClosed', n: number): void => {
+      const k = canon(name)
+      if (!merged[k]) merged[k] = { closer: name, closeWon: 0, sheetClosed: 0 }
+      merged[k][field] += n
+    }
+    Object.entries(wonByCloser).forEach(([n, c]) => add(n, 'closeWon', c))
+    Object.entries(closesByCloser).forEach(([n, c]) => add(n, 'sheetClosed', c))
+    const byCloser = Object.values(merged).sort((a, b) => b.closeWon - a.closeWon)
 
     return {
       close: { opportunitiesTotal: rows.length, wonTotal, wonValue: Math.round(wonValue), wonProgram },
