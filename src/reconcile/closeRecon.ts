@@ -7,6 +7,13 @@ import { requireAdmin } from '../auth/routes'
 const canon = (name: string): string =>
   (name || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim()
 
+// Confirmed same-person aliases (Close placeholder surname -> real sheet name).
+const ALIAS: Record<string, string> = {
+  'richard daily mentor': 'richard lee',
+  'emilia daily mentor': 'emilia de azcuenaga',
+}
+const keyOf = (name: string): string => ALIAS[canon(name)] ?? canon(name)
+
 // Reconciliation: does the LIVE Close data agree with the sheet? Compares Close
 // won opportunities (by closer) against the sheet's closes (Lead Status "Closed",
 // by Lead Owner). If the two line up, the API-direct pipe is trustworthy.
