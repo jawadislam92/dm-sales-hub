@@ -73,6 +73,15 @@ export function registerAdmin(app: FastifyInstance, db: PGlite): void {
       'SELECT id,source,external_id,event_type,received_at,process_state FROM raw_events ORDER BY id DESC LIMIT $1',
       [limit])).rows
   })
+
+  // Full payload of one raw event (for building mappings against real data).
+  app.get('/admin/api/raw-events/:id', async (req, reply) => {
+    if (!requireAdmin(req, reply)) return
+    const r = (await db.query('SELECT id,source,event_type,payload FROM raw_events WHERE id=$1',
+      [Number((req.params as { id: string }).id)])).rows[0]
+    if (!r) return reply.code(404).send({ error: 'not found' })
+    return r
+  })
 }
 
 const ADMIN_HTML = `<!doctype html><meta charset="utf-8"><title>Admin — Daily Mentor</title>

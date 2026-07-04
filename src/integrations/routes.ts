@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify'
 import type { PGlite } from '@electric-sql/pglite'
 import { requireAdmin } from '../auth/routes'
+import type { PollConfig } from './connectors'
 import {
   listIntegrations, createIntegration, updateIntegration, deleteIntegration, runIntegration,
   type NewIntegration,
@@ -48,6 +49,22 @@ export function registerIntegrations(app: FastifyInstance, db: PGlite): void {
     } catch (e) {
       return reply.code(502).send({ error: e instanceof Error ? e.message : String(e) })
     }
+  })
+
+  // Dev/build helper: hit one path on the integration's API using its stored key
+  // (server-side; the key is never returned) to inspect real record shapes.
+  app.get('/admin/api/integrations/:id/probe', async (req, reply) => {
+    if (!requireAdmin(req, reply)) return
+    const row = (await db.query<Record<string, unknown>>('SELECT * FROM integrations WHERE id=$1', [idOf(req)])).rows[0]
+    if (!row) return reply.code(404).send({ error: 'not found' })
+    const cfg = (typeof row.config === 'string' ? JSON.parse(row.config) : row.config) as PollConfig
+    const token = cfg.auth?.token || String(row.secret || '')
+    const path = String((req.query as Record<string, unknown>).path || '/lead/?_limit=1')
+    const url = String(cfg.base_url).replace(/\/$/, '') + path
+    const res = await fetch(url, {
+      headers: { accept: 'application/json', authorization: 'Basic ' + Buffer.from(token + ':').toString('base64') },
+    })
+    return { status: res.status, body: await res.json() }
   })
 }
 
